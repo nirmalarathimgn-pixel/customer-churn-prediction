@@ -1,0 +1,44 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+import matplotlib.pyplot as plt
+
+# Load
+df = pd.read_csv("Telco-Customer-Churn.csv")
+
+# Cleaning
+df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
+df.fillna(df.median(numeric_only=True), inplace=True)
+df.drop('customerID', axis=1, inplace=True)
+
+# Encoding
+le = LabelEncoder()
+for col in df.columns:
+    if df[col].dtype == 'object':
+        df[col] = le.fit_transform(df[col])
+
+# Split
+X = df.drop('Churn', axis=1)
+y = df['Churn']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+# Logistic Regression
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Confusion Matrix:", confusion_matrix(y_test, y_pred))
+
+# Random Forest (upgrade)
+rf = RandomForestClassifier()
+rf.fit(X_train, y_train)
+print("RF Accuracy:", accuracy_score(y_test, rf.predict(X_test)))
+
+# Feature Importance
+importance = pd.Series(model.coef_[0], index=X.columns)
+importance.sort_values().plot(kind='barh')
+plt.show()
